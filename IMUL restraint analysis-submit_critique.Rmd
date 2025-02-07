@@ -46,6 +46,8 @@ set path
 ```{r set path}
 setwd("/Users/hanzhiwang/Library/CloudStorage/GoogleDrive-hwang567@ucr.edu/My Drive/Cousework/2024 Fall/PSYC 211_Stats/Project")
 
+# critique: should use relative path, as below
+# library(here)
 ```
 
 Load original data
@@ -56,6 +58,11 @@ df_lena0 <-
 df_restraint0 <- 
   read.csv("unrestrained_data_211_date_converted.csv")
 
+# critique: in the original csv file, unique id 08/01, 09/01, 10/01, 11/01 is automatically converted to date because it's excel... I manually replaced them into 08_01 etc in excel, which is not a good idea at all. It's better to do it in R for fidelity.
+# df_restraint0 <-
+#   read.csv("unrestrained_data_211_origin.csv")
+# df_restraint0 <- df_restraint0 %>%
+#   mutate(unique_id = ifelse(str_detect(unique_id, "-"), format(as.Date(unique_id, format="%d-%b"),"%m/%d"),unique_id))
 ```
 
 Check data type
@@ -94,6 +101,8 @@ color_noncrw <- "red"
 color_nonmob <- "red"
 color_mob <- "navy"
 
+
+# critique: good thing here I pre-set all my colors beforehand, so that (1) colors throughout all the figures are consistent, and (2) it is easy to change systematically in the future.
 ```
 
 # Data clean
@@ -138,6 +147,15 @@ df_subj[is.na(df_subj$infant_race),]
 table(df_subj$infant_ethnicity,useNA = "ifany")
 df_subj[is.na(df_subj$infant_ethnicity),]
 
+# critique: repetitive
+# improve:
+# for (col in c("infant_sex","infant_race","infant_ethnicity"))
+# {
+#   print(table(df_subj[,col], useNA = "ifany"))
+# }
+# 
+# df_subj %>% 
+#   filter(is.na(infant_sex)| is.na(infant_race)| is.na(infant_ethnicity))
 
 ```
 
@@ -146,6 +164,9 @@ How many sessions in younger/older group
 table(df_comb$age_group)
 # 67 in younger, and 76 in older group
 
+# critique: I should store these numbers into some variable with straightforward name, so that (1) I can copy the variable (instead of the value) in my manuscript which I'll be writing in R anyway, and (2) readers can find these important values more easily later on. Modify as:
+# sess_num <- table(df_comb$age_group)
+# sess_num
 ```
 
 How many subjects in younger/older group
@@ -153,6 +174,9 @@ How many subjects in younger/older group
 table(df_subj$age_group)
 # 30 in younger, and 36 in older group
 
+# critique: same here. should store these numbers into some variables with straightforward names. Modify as:
+# subj_num <- table(df_subj$age_group)
+# subj_num
 ```
 
 Age range
@@ -164,6 +188,13 @@ sd(df_comb$agemo[df_comb$age_group=="Younger"])
 range(df_comb$agemo[df_comb$age_group=="Older"])
 mean(df_comb$agemo[df_comb$age_group=="Older"])
 sd(df_comb$agemo[df_comb$age_group=="Older"])
+
+# critique: not efficient. Could have written as:
+# df_comb %>% 
+#   group_by(age_group) %>% 
+#   summarise(range = range(agemo),
+#             mean = mean(agemo),
+#             sd = sd(agemo))
 
 ```
 
@@ -177,6 +208,7 @@ chisq.test(df_subj$age_group, df_subj$infant_sex)
 chisq.test(df_subj$age_group, df_subj$infant_race)
 chisq.test(df_subj$age_group, df_subj$infant_ethnicity)
 
+# critique: can use "for" loop
 ```
 
 Make the agemo into integers (e.g., 4, 5 mos), and count how many sessions in 4/5/.../14 age month group
@@ -190,6 +222,11 @@ df_comb$age_mo_grp <- ifelse(df_comb$agemo>3.5 & df_comb$agemo<4.5,4,
                                                                ifelse(df_comb$agemo>12.5 & df_comb$agemo<13.5,13,
                                                                       ifelse(df_comb$agemo>13.5 & df_comb$agemo<14.5,14,NA))))))))
 
+
+# critique: very low efficient and sensitive to typo
+# improve: 
+# df_comb <- df_comb %>% 
+#   mutate(age_mo_grp_test = floor(agemo+0.5))
 
 age_mo_dist <- table(df_comb$age_mo_grp)
 cat("Table: Session numbers in different age month groups")
@@ -206,11 +243,20 @@ df_comb$loc_cat <- ifelse(df_comb$walker=="Walker"& !is.na(df_comb$walker),"walk
                           ifelse(df_comb$crawler=="Crawler"& !is.na(df_comb$crawler),"crawler",
                                  ifelse(df_comb$sitter=="Sitter"& !is.na(df_comb$sitter),"sitter",
                                   ifelse(df_comb$sitter=="Non-Sitter","non-sitter",NA))))
+# critique: also low efficient and sensitive to typo
+# improve:
+# df_comb <- df_comb %>% 
+#   mutate(loc_cat = case_when(
+#     walker == "Walker" ~ "walker",
+#     crawler == "Crawler" ~ "crawler",
+#     sitter == "Sitter" ~ "sitter",
+#     TRUE ~ "non-sitter"))
 
 table(df_comb$loc_cat)
 table (df_comb$sitter,df_comb$age_mo_grp, useNA = "ifany")
 table (df_comb$crawler,df_comb$age_mo_grp, useNA = "ifany")
 table (df_comb$walker,df_comb$age_mo_grp, useNA = "ifany")
+# critique: again, can use "for" loop
 ```
 
 
@@ -220,6 +266,14 @@ Give temporal id to each subject, for graphing purpose
 df_comb <- df_comb %>%
   mutate(temp_id = dense_rank(id))
 
+# Critique: This id order is messy which wil make the figure messy later on. I want younger group to be together but separate them from older group.
+# improve: Assign order to df_subj first. Assign lower order to infants who participated the study earlier. Then import back to df_comb, giving multiple sessions the same temp_id as long as they belong to same participant
+# df_subj <- df_subj %>% 
+#   arrange(agemo) %>% 
+#   mutate(temp_id = row_number()) %>% 
+#   arrange(unique_id)
+# df_comb <- df_comb %>% 
+#   left_join(df_subj %>% select(id,temp_id), by = "id")
 ```
 
 Divide the dataset into four locomotor status groups and draw a graph showing dataset distribution
@@ -258,6 +312,13 @@ calculate total time duration of each session
 df_comb$time_ttl <- (map2_int(df_comb$id, df_comb$session, 
                              ~ sum(df_restraint0$id == .x & df_restraint0$session == .y))*15/60)
 
+# critique: the code is not straightforward. Actually I didn't know how to do this calculation so I asked chatGPT, and it gave me this feasible yet weird answer. Now I know I can do it as:
+# for(n in c(1:nrow(df_comb))){
+#   time_ttl <- (sum(df_restraint0$unique_id==df_comb$unique_id[n]))*15/60
+#   df_comb$time_ttl[n] <- time_ttl
+# }
+# Is there a better way??
+
 ```
 
 calculate nap/excluded time period of each session
@@ -266,13 +327,21 @@ df_comb$time_na <- (map2_int(df_comb$id, df_comb$session,
                              ~ sum(df_restraint0$id == .x & df_restraint0$session == .y & 
                                    (df_restraint0$nap_period==1 | df_restraint0$exclude_period==1)))*15/60)
 
-
+# critique: Same here, the code is not straightforward. Same modification here:
+# for(n in c(1:nrow(df_comb))){
+#   time_na <- (sum(df_restraint0$unique_id==df_comb$unique_id[n] & 
+#                     (df_restraint0$nap_period==1 | df_restraint0$exclude_period==1)))*15/60
+#   df_comb$time_na2[n] <- time_na
+# }
 ```
 
 calculate useful time, which is total time subtracts useless time
 ```{r calculate useful time, which is total time subtract useless time}
 df_comb$time_use <- df_comb$time_ttl - df_comb$time_na
 
+# critique: use tidyverse
+# df_comb <- df_comb %>% 
+#   mutate(time_use = time_ttl-time_na)
 ```
 
 calculate restrained time proportion among the useful time
@@ -282,6 +351,18 @@ df_comb$time_rstr <- (map2_int(df_comb$id, df_comb$session,
                                    df_restraint0$nap_period==0 & df_restraint0$exclude_period==0 &
                                    df_restraint0$unrestrained=="No"))*15/60)
 df_comb$prop_rstr <- df_comb$time_rstr/df_comb$time_use
+
+
+# critique: should write more straightforward code with tidyverse
+# for(n in c(1:nrow(df_comb))){
+#   time_rstr <- (sum(df_restraint0$unique_id==df_comb$unique_id[n] & 
+#                       df_restraint0$nap_period==0 &
+#                       df_restraint0$exclude_period==0 &
+#                       df_restraint0$unrestrained=="No"))*15/60
+#   df_comb$time_rstr[n] <- time_rstr
+# }
+# df_comb <- df_comb %>%
+#   mutate(prop_rstr = time_rstr/time_use)
 
 ```
 
@@ -298,6 +379,11 @@ sd(df_comb$time_na)
 range(df_comb$time_use)
 mean(df_comb$time_use)
 sd(df_comb$time_use)
+
+# critique: repetitive
+# improve:
+# df_comb %>% 
+#   summarize(across(c("time_ttl","time_na","time_use"),list(range=range,mean=mean,sd=sd)))
 
 ```
 
@@ -392,6 +478,7 @@ doc <-
   print(target = "Table_Age M SD.docx") 
 # print the table into a word document with APA style
 
+# critique: The code is to much. Is there a smarter way to export the table into a word document? Or, if I'm going to write the manuscript in R markdown, what is the best way to insert the table in my R markdown?
 ```
 
 RTP in different age groups (i.e., younger, older)
