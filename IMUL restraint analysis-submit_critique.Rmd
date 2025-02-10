@@ -223,8 +223,8 @@ df_comb$age_mo_grp <- ifelse(df_comb$agemo>3.5 & df_comb$agemo<4.5,4,
                                                                       ifelse(df_comb$agemo>13.5 & df_comb$agemo<14.5,14,NA))))))))
 
 # critique: very low efficient and sensitive to typo
-# improve: 
-# df_comb <- df_comb %>% 
+# improve:
+# df_comb <- df_comb %>%
 #   mutate(age_mo_grp_test = floor(agemo+0.5))
 
 age_mo_dist <- table(df_comb$age_mo_grp)
@@ -459,7 +459,6 @@ table_age <- dscrpt_age %>%
   select(age_mo_grp,mean, sd,n) %>%
   as.data.frame() %>%
   round(3)
-
 desc_table <- 
   flextable::flextable(table_age) %>% 
   flextable::set_header_labels(
@@ -468,14 +467,13 @@ desc_table <-
     sd = "SD",
     n = "N") %>%
   flextable::autofit()
-
 doc <- 
   officer::read_docx() %>%
   flextable::body_add_flextable(desc_table) %>%
   print(target = "Table_Age M SD.docx") 
 # print the table into a word document with APA style
 
-# critique: The code is to much. Is there a smarter way to export the table into a word document? Or, if I'm going to write the manuscript in R markdown, what is the best way to insert the table in my R markdown?
+# critique: The code is too much. Is there a smarter way to export the table into a word document? Or, if I'm going to write the manuscript in R markdown, what is the best way to insert the table in my R markdown?
 ```
 
 RTP in different age groups (i.e., younger, older)
@@ -562,15 +560,39 @@ summary(mod.age3)
 # check_collinearity(mod.age1)
 # check_collinearity(mod.age2)
 # check_collinearity(mod.age3)
-# diagnostic_plots <- plot(check_model(mod.age1, panel = FALSE))
-# diagnostic_plots <- plot(check_model(mod.age2, panel = FALSE))
-# diagnostic_plots <- plot(check_model(mod.age3, panel = FALSE))
-# diagnostic_plots[[1]]
-# diagnostic_plots[[2]]
-# diagnostic_plots[[3]]
-# diagnostic_plots[[4]]
-# diagnostic_plots[[5]]
-# diagnostic_plots[[6]]
+# diagnostic_plots1 <- plot(check_model(mod.age1, panel = FALSE))
+# diagnostic_plots2 <- plot(check_model(mod.age2, panel = FALSE))
+# diagnostic_plots3 <- plot(check_model(mod.age3, panel = FALSE))
+# diagnostic_plots1[[1]]
+# diagnostic_plots1[[2]]
+# diagnostic_plots1[[3]]
+# diagnostic_plots1[[4]]
+# diagnostic_plots1[[5]]
+# diagnostic_plots1[[6]]
+# diagnostic_plots2[[1]]
+# diagnostic_plots2[[2]]
+# diagnostic_plots2[[3]]
+# diagnostic_plots2[[4]]
+# diagnostic_plots2[[5]]
+# diagnostic_plots2[[6]]
+# diagnostic_plots3[[1]]
+# diagnostic_plots3[[2]]
+# diagnostic_plots3[[3]]
+# diagnostic_plots3[[4]]
+# diagnostic_plots3[[5]]
+# diagnostic_plots3[[6]]
+
+# critique: codes are repetitive, should have used "for" loop.
+# for (mod in c(mod.age1, mod.age2, mod.age3)){
+#   print(check_collinearity(mod))
+#   diagnostic_plots <- plot (check_model(mod, panel = F))
+#   print(diagnostic_plots[[1]])
+#   print(diagnostic_plots[[2]])
+#   print(diagnostic_plots[[3]])
+#   print(diagnostic_plots[[4]])
+#   print(diagnostic_plots[[5]])
+#   print(diagnostic_plots[[6]])
+# }
 
 report(mod.age1)
 cat('\n')
@@ -674,6 +696,19 @@ summary(mod.mob3)
 # diagnostic_plots[[4]]
 # diagnostic_plots[[5]]
 # diagnostic_plots[[6]]
+
+
+# critique: codes are repetitive, should have used "for" loop.
+# for (mod in c(mod.mob1, mod.mob2, mod.mob3)){
+#   print(check_collinearity(mod))
+#   diagnostic_plots <- plot (check_model(mod, panel = F))
+#   print(diagnostic_plots[[1]])
+#   print(diagnostic_plots[[2]])
+#   print(diagnostic_plots[[3]])
+#   print(diagnostic_plots[[4]])
+#   print(diagnostic_plots[[5]])
+#   print(diagnostic_plots[[6]])
+# }
 
 anova(mod.mob1,mod.mob2)
 anova(mod.mob1,mod.mob3)
